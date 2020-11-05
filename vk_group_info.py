@@ -31,7 +31,7 @@ def memb(name, members_count):
     result = []
     for i in range(members_count // 1000 + 1):
         response = requests.get(url + 'groups.getMembers', params={
-            'lang': 0,
+            'lang': 0, # язык запроса - Русский
             'group_id': name,  # Наименование группы
             'v': 5.124,  # Версия API
             'access_token': access_token,  # Токен
@@ -40,7 +40,6 @@ def memb(name, members_count):
         })
         result.extend(response.json()['response']['items'])
     return result
-
 
 
 # ------------------------------------------
@@ -54,22 +53,28 @@ def format_phone(phone):
     for char in phone.strip():
         if char in ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']:
             new_phone += char
-    if len(new_phone) != 11:
-        return ''
+
+    if new_phone[0] == '9':
+        new_phone = '8' + new_phone[1:] # если первая цифра 9 (например 961...) приписываем 8
+
     if new_phone[0] == '8' or new_phone[0] == '7':
-        new_phone = '+7' + new_phone[1:]
-    if new_phone[2] == '8':
-        return ''
+        new_phone = '+7' + new_phone[1:] # заменяем телефоны с 7 или 8 на +7
+
+    if (len(new_phone) != 12) or (new_phone[2] != '9'):
+        return '' # если не подходит под формат +79123456789 или телефон не мобильный
+
     return new_phone
 
 
+# члены группы с открытыми аккаунтами
 # ----------
 def open_membs(members):
     open_members = []
     for i in range(len(members) // 100 + 1):
         response = requests.get(url + 'users.get', params={
-            'lang': 0,
-            'user_ids': ','.join(list(map(str, members[i * 100:(i + 1) * 100]))),  # Наименование группы
+            'lang': 0, # язык запроса - Русский
+            'user_ids': ','.join(list(map(str, members[i * 100:(i + 1) * 100]))),
+            # Наименование группы
             'v': 5.124,  # Версия API
             'access_token': access_token,  # Токен
             'fields': 'city, bdate, sex, contacts'
@@ -84,9 +89,12 @@ def open_membs(members):
                 pass
 
     # Пользователи с открытым профилем
+    return open_members
     # print(len(open_members))
 # ------------------------------------------
 # Пользователи с номерами телефонов
+
+
 def phone_memb(open_members):
     phone_members = []
 
@@ -99,9 +107,12 @@ def phone_memb(open_members):
     # phone_members.sort(key=lambda x: (x['sex'], x['first_name']))
 
     # print(len(phone_members)) # пользователи указавшие номер телефона
+    return phone_members
 
 # ОСНОВНАЯ ФУНКЦИЯ
 # -------------------------------------------------------
+
+
 def get_info(group_name):
     result = {'name': group_name}
 
@@ -109,6 +120,8 @@ def get_info(group_name):
     result['members_count'] = members_count
 
     members = memb(group_name, members_count)  # Список пользователей группы
+    om = open_membs(members)  # Список пользователей с открытым аккаунтом
+    pm = phone_memb(om)  # Список пользователей с номером телефона
     # TEMP
     # print(members_count)  # Количество пользователей в группе
     return result
