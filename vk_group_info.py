@@ -1,10 +1,11 @@
 # VK group info
 import requests
+import config
 
 # ---------------------
 url = 'https://api.vk.com/method/'
 group_name = 'gk_yoga'
-access_token = '427c78f4427c78f4427c78f455420fc2194427c427c78f41d32f4096725f4bfb1c81c39'
+access_token = config.TOKEN
 
 
 # ------------------------------------------
